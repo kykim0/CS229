@@ -1,6 +1,5 @@
 """Classical statistical time-series models."""
 
-# from statsmodels.tsa.api import ExponentialSmoothing, Holt, SimpleExponentialSmoothing
 from statsmodels.tsa import api, ar_model
 
 
@@ -30,6 +29,7 @@ def holt_exp_smoothing(endog, exp_trend=False, damped_trend=False):
   """
   model = api.Holt(endog=endog, exponential=exp_trend,
                    damped_trend=damped_trend)
+  # Optimize the model params automatically.
   model_res = model.fit(optimized=True)
   return model_res
 
@@ -49,7 +49,13 @@ def holt_winters_exp_smoothing(endog, trend='add', damped_trend=False,
     seasonal_periods: (int) number of periods in a complete cycle.
     use_boxcox: (bool) True to apply the Box-Cox transform first.
   """
-  return None
+  model = api.ExponentialSmoothing(endog=endog, trend=trend,
+                                   damped_trend=damped_trend, seasonal=seasonal,
+                                   seasonal_periods=seasonal_periods,
+                                   use_boxcox=use_boxcox)
+  # Optimize the model params automatically.
+  model_res = model.fit(optimized=True)
+  return model_res
 
 
 def autoreg_model(endog, lags, select_order=False, trend='c', exog=None,
