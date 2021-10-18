@@ -1,7 +1,7 @@
 """Metrics to compare time-series models."""
 
 import numpy as np
-import sklearn
+import sklearn.metrics
 
 
 def mean_sqaured_error(y_true, y_pred):
