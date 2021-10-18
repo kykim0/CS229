@@ -11,3 +11,14 @@ flags.DEFINE_bool('exp_trend', False,
                   'True to use exponential trend. Use linear otherwise.')
 
 flags.DEFINE_bool('damped_trend', True, 'True to damp the trend component.')
+
+flags.DEFINE_enum('trend', 'add', ['add', 'mul'],
+                  'Type of the trend component to use.')
+
+flags.DEFINE_enum('seasonal', 'add', ['add', 'mul'],
+                  'Type of the seasonal component to use.')
+
+flags.DEFINE_integer('seasonal_periods', None,
+                     'Number of periods in a complete seasonal cycle.')
+
+flags.DEFINE_bool('use_boxcox', False, 'True to apply the Box-Cox transform.')
