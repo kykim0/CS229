@@ -1,7 +1,7 @@
 """Main to train and analyze time-series models.
 
 TODO(kykim):
-- Allow to sample data (now only 10 mins)
+- Allow to sample data (now only 10 mins) e.g., sample_rate of 6 means 1/6.
 """
 
 import os
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import data
-import flags as cflags
+import flags as cflags  # pylint: disable=unused-import
 import metrics
 import stat_models
 
@@ -46,10 +46,9 @@ flags.DEFINE_bool('plot_diagnostics', False,
                   'True to plot model diagnostics.')
 
 
-def fit_and_forecast(model, train_df, test_df, tcolumn, forecast_steps):
+def fit_and_forecast(model, train_df, tcolumn, forecast_steps):
   """Fits a stats model and returns fitted values and forecasts."""
   y_true = train_df[tcolumn].to_numpy()
-  train_len, test_len = len(train_df.index), len(test_df.index)
 
   model_res, fitted_values, predictions = None, None, None
   if model == 'ar':
@@ -63,16 +62,22 @@ def fit_and_forecast(model, train_df, test_df, tcolumn, forecast_steps):
     model_res = stat_models.holt_exp_smoothing(y_true, exp_trend=exp_trend,
                                                damped_trend=damped_trend)
   elif model == 'holtwinters':
-    model_res = stat_models.holt_winters_exp_smoothing()
+    trend = FLAGS.trend
+    damped_trend = FLAGS.damped_trend
+    seasonal = FLAGS.seasonal
+    periods = FLAGS.seasonal_periods
+    use_boxcox = FLAGS.use_boxcox
+    model_res = stat_models.holt_winters_exp_smoothing(
+      y_true, trend=trend, damped_trend=damped_trend, seasonal=seasonal,
+      seasonal_periods=periods, use_boxcox=use_boxcox)
+
+  print(model_res.params)
+  print(model_res.summary())
 
   fitted_values = model_res.fittedvalues
   predictions = model_res.forecast(forecast_steps)
-  print(y_true[:30])
-  print(fitted_values[:30])
-  print(model_res.params)
-  print(model_res.summary())
   return model_res, fitted_values, predictions
-  
+
 
 def plot_fit_pred(train_df, test_df, tcolumn, fitted_values, predictions):
   """Creates a plot of fitted values and predictions
@@ -113,10 +118,8 @@ def main(argv=()):
   forecast_steps = FLAGS.forecast_steps
   train_df, test_df = df.iloc[:-forecast_steps], df.iloc[-forecast_steps:]
   model_res, fitted_values, predictions = fit_and_forecast(
-    FLAGS.model, train_df, test_df, tcolumn, forecast_steps)
+    FLAGS.model, train_df, tcolumn, forecast_steps)
 
-  print(test_df[tcolumn].to_numpy()[-30:])
-  print(predictions[-30:])
   mae = metrics.mean_absolute_error(test_df[tcolumn].to_numpy(), predictions)
   print(f'Mean absolute error: {mae}')
 
