@@ -2,6 +2,10 @@
 
 from absl import flags
 
+# Data.
+flags.DEFINE_integer('data_interval', None,
+                     'If not None, only include data points at this interval.')
+
 # AR models.
 flags.DEFINE_integer('lags', None,
                      'The number of lags to include in the AR type models.')

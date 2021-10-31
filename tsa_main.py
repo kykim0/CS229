@@ -112,11 +112,15 @@ def main(argv=()):
   start_date, end_date = FLAGS.start_date, FLAGS.end_date
   df = data.read_data_df(FLAGS.dataset_name, filepath,
                          start_date, end_date)
+  if FLAGS.data_interval:
+    df = df[::FLAGS.data_interval]
 
   # Train a model.
   tcolumn = FLAGS.dependent_col_name
   forecast_steps = FLAGS.forecast_steps
   train_df, test_df = df.iloc[:-forecast_steps], df.iloc[-forecast_steps:]
+  print(f'Training dataset size: {len(train_df)}')
+  print(f'Test dataset size: {len(test_df)}')
   model_res, fitted_values, predictions = fit_and_forecast(
     FLAGS.model, train_df, tcolumn, forecast_steps)
 
