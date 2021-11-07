@@ -93,14 +93,14 @@ def plot_fit_pred(train_df, test_df, tcolumn, fitted_values, predictions):
   fig = plt.figure(figsize=(10, 6))
   ax = fig.subplots()
   ax.set_title(tcolumn)
-  ax.plot(train_df.index, train_df[tcolumn])
-  ax.plot(test_df.index, test_df[tcolumn])
+  ax.plot(train_df.index, train_df[tcolumn], '.-')
+  ax.plot(test_df.index, test_df[tcolumn], '.-')
 
   # Plot the fitted values and predictions.
   # Note that the length of `fitted_values` may not match the size of the
   # training dataset if, for instance, a long lag was used for an AR model.
-  ax.plot(train_df.index[-len(fitted_values):], fitted_values, '--')
-  ax.plot(test_df.index, predictions, '--')
+  ax.plot(train_df.index[-len(fitted_values):], fitted_values, '.--')
+  ax.plot(test_df.index, predictions, '.--')
   ax.legend(labels=['Train', 'Test', 'Fit', 'Pred'])
   return fig
 
