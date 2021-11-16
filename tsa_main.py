@@ -1,7 +1,9 @@
 """Main to train and analyze time-series models.
 
-TODO(kykim):
-- Allow to sample data (now only 10 mins) e.g., sample_rate of 6 means 1/6.
+Example usage:
+  $ python3 tsa_main.py \
+      --model=ses --start_date=2010-01-01 --end_date=2012-01-31 \
+      --forecast_steps=2 --data_interval=4320
 """
 
 import os
@@ -20,20 +22,10 @@ sns.set_style('darkgrid')
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_enum('dataset_name', 'weather', ['weather'],
-                  'Name of the dataset for time-series modeling.')
-
-flags.DEFINE_string('filepath', 'data/jena_climate_2009_2016.csv',
-                    'Path to a csv data file.')
-
 flags.DEFINE_enum('model', None,
                   ['ar', 'ma', 'arma', 'arima', 'sarima',
                    'ses', 'holt', 'holtwinters'],
                   'The type of time-series model to use.')
-
-flags.DEFINE_string('start_date', None, 'Start date for the data.')
-
-flags.DEFINE_string('end_date', None, 'End date for the data.')
 
 flags.DEFINE_integer('forecast_steps', 10,
                      'The number of steps to forecast. This many data points'

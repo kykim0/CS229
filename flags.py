@@ -3,6 +3,16 @@
 from absl import flags
 
 # Data.
+flags.DEFINE_string('filepath', 'data/jena_climate_2009_2016.csv',
+                    'Path to a csv data file.')
+
+flags.DEFINE_enum('dataset_name', 'weather', ['weather'],
+                  'Name of the dataset for time-series modeling.')
+
+flags.DEFINE_string('start_date', None, 'Start date for the data.')
+
+flags.DEFINE_string('end_date', None, 'End date for the data.')
+
 flags.DEFINE_integer('data_interval', None,
                      'If not None, only include data points at this interval.')
 
