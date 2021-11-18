@@ -9,6 +9,7 @@ import seaborn as sns
 import data
 import flags as cflags  # pylint: disable=unused-import
 
+sns.set(font_scale=0.7)
 sns.set_style('darkgrid')
 
 FLAGS = flags.FLAGS
@@ -23,7 +24,7 @@ def main(argv=()):
                          start_date, end_date)
 
   corr = df.corr(method='spearman')
-  sns.heatmap(corr.round(2), annot=True)
+  sns.heatmap(corr.round(2), annot=True, linewidths=.5)
   plt.show()
 
 
