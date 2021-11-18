@@ -20,13 +20,40 @@ flags.DEFINE_integer('data_interval', None,
 flags.DEFINE_integer('lags', None,
                      'The number of lags to include in the AR type models.')
 
+flags.DEFINE_enum('arima_trend', 'c', ['n', 'c', 't', 'ct'],
+                  'Type of trend to model for ARIMA models.')
+
+flags.DEFINE_string('arima_p', '1',
+                    'The p parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_integer('arima_d', 0,
+                     'The d parameter for the non-seasonal component.')
+
+flags.DEFINE_string('arima_q', '0',
+                    'The q parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_string('sarima_p', '0',
+                    'The p parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_integer('sarima_d', 0,
+                     'The d parameter for the non-seasonal component.')
+
+flags.DEFINE_string('sarima_q', '0',
+                    'The q parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_integer('sarima_s', 0, 'The seasonal periodicity.')
+
 # Exponential smoothing models.
 flags.DEFINE_bool('exp_trend', False,
                   'True to use exponential trend. Use linear otherwise.')
 
 flags.DEFINE_bool('damped_trend', True, 'True to damp the trend component.')
 
-flags.DEFINE_enum('trend', 'add', ['add', 'mul'],
+flags.DEFINE_enum('ets_trend', 'add', ['add', 'mul'],
                   'Type of the trend component to use.')
 
 flags.DEFINE_enum('seasonal', 'add', ['add', 'mul'],
