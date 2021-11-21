@@ -11,14 +11,12 @@ import os
 from absl import app
 from absl import flags
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 import data
 import flags as cflags  # pylint: disable=unused-import
 import metrics
+import plot
 import stat_models
-
-sns.set_style('darkgrid')
 
 FLAGS = flags.FLAGS
 
@@ -26,18 +24,56 @@ flags.DEFINE_enum('model', None,
                   ['ar', 'sarimax', 'ses', 'holt', 'holtwinters'],
                   'The type of time-series model to use.')
 
-flags.DEFINE_integer('forecast_steps', 10,
-                     'The number of steps to forecast. This many data points'
-                     ' from the end are used for testing.')
-
-flags.DEFINE_string('endog_col_name', 'T (degC)',
-                    'The name of the dependent variable column.')
-
-flags.DEFINE_string('exog_col_names', '',
-                    'The names of the explanatory variable columns if any.')
-
 flags.DEFINE_bool('plot_diagnostics', False,
                   'True to plot model diagnostics.')
+
+# AR models.
+flags.DEFINE_integer('lags', None,
+                     'The number of lags to include in the AR type models.')
+
+flags.DEFINE_enum('arima_trend', 'c', ['n', 'c', 't', 'ct'],
+                  'Type of trend to model for ARIMA models.')
+
+flags.DEFINE_string('arima_p', '1',
+                    'The p parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_integer('arima_d', 0,
+                     'The d parameter for the non-seasonal component.')
+
+flags.DEFINE_string('arima_q', '0',
+                    'The q parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_string('sarima_p', '0',
+                    'The p parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_integer('sarima_d', 0,
+                     'The d parameter for the non-seasonal component.')
+
+flags.DEFINE_string('sarima_q', '0',
+                    'The q parameter for the non-seasonal component. This can'
+                    ' be a csv for specific orders.')
+
+flags.DEFINE_integer('sarima_s', 0, 'The seasonal periodicity.')
+
+# Exponential smoothing models.
+flags.DEFINE_bool('exp_trend', False,
+                  'True to use exponential trend. Use linear otherwise.')
+
+flags.DEFINE_bool('damped_trend', True, 'True to damp the trend component.')
+
+flags.DEFINE_enum('ets_trend', 'add', ['add', 'mul'],
+                  'Type of the trend component to use.')
+
+flags.DEFINE_enum('seasonal', 'add', ['add', 'mul'],
+                  'Type of the seasonal component to use.')
+
+flags.DEFINE_integer('seasonal_periods', None,
+                     'Number of periods in a complete seasonal cycle.')
+
+flags.DEFINE_bool('use_boxcox', False, 'True to apply the Box-Cox transform.')
 
 
 def _parse(csv_str):
@@ -87,34 +123,11 @@ def fit_and_forecast(model, train_df, test_df, endog_col, exog_cols,
 
   fitted_values = model_res.fittedvalues
   exog_test = test_df[exog_cols].to_numpy() if exog_cols else None
-  predictions = model_res.forecast(steps=forecast_steps, exog=exog_test)
+  if exog_test:
+    predictions = model_res.forecast(steps=forecast_steps, exog=exog_test)
+  else:
+    predictions = model_res.forecast(steps=forecast_steps)
   return model_res, fitted_values, predictions
-
-
-def plot_fit_pred(train_df, test_df, endog_col, fitted_values, predictions):
-  """Creates a plot of fitted values and predictions
-
-  Args:
-    train_df: (DataFrame) training data.
-    test_df: (DataFrame) test data.
-    endog_col: (str) name of the depedent variable column.
-    fitted_values: (np.ndarray) in-sample fitted values.
-    predictions: (np.ndarray) out-of-sample predictions.
-  """
-  # Plot the training and test data.
-  fig = plt.figure(figsize=(10, 6))
-  ax = fig.subplots()
-  ax.set_title(endog_col)
-  ax.plot(train_df.index, train_df[endog_col], '.-')
-  ax.plot(test_df.index, test_df[endog_col], '.-')
-
-  # Plot the fitted values and predictions.
-  # Note that the length of `fitted_values` may not match the size of the
-  # training dataset if, for instance, a long lag was used for an AR model.
-  ax.plot(train_df.index[-len(fitted_values):], fitted_values, '.--')
-  ax.plot(test_df.index, predictions, '.--')
-  ax.legend(labels=['Train', 'Test', 'Fit', 'Pred'])
-  return fig
 
 
 def main(argv=()):
@@ -123,9 +136,7 @@ def main(argv=()):
   filepath = os.path.abspath(FLAGS.filepath)
   start_date, end_date = FLAGS.start_date, FLAGS.end_date
   df = data.read_data_df(FLAGS.dataset_name, filepath,
-                         start_date, end_date)
-  if FLAGS.data_interval:
-    df = df[::FLAGS.data_interval]
+                         start_date, end_date, FLAGS.data_interval)
 
   # Train a model.
   endog_col = FLAGS.endog_col_name
@@ -140,7 +151,7 @@ def main(argv=()):
   mae = metrics.mean_absolute_error(test_df[endog_col].to_numpy(), predictions)
   print(f'Mean absolute error: {mae}')
 
-  plot_fit_pred(train_df, test_df, endog_col, fitted_values, predictions)
+  plot.plot_fit_pred(train_df, test_df, endog_col, fitted_values, predictions)
   if FLAGS.plot_diagnostics:
     fig = plt.figure(figsize=(16, 9))
     model_res.plot_diagnostics(fig=fig)

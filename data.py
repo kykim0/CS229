@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 
-def _read_weather_df(filepath, start=None, end=None):
+def _read_weather_df(filepath, start=None, end=None, data_interval=None):
   """Returns a DataFrame of the processed weather data."""
   df = pd.read_csv(filepath)
 
@@ -42,10 +42,12 @@ def _read_weather_df(filepath, start=None, end=None):
   df['ycos'] = np.cos(timestamp * (2 * np.pi / (365 * 86400)))
 
   df = df.set_index('Date Time')
+  if data_interval:
+    df = df[::data_interval]
   return df
 
 
-def read_data_df(name, filepath, start=None, end=None):
+def read_data_df(name, filepath, start=None, end=None, data_interval=None):
   """Returns time-series data as a DataFrame instance.
 
   Args:
@@ -56,5 +58,5 @@ def read_data_df(name, filepath, start=None, end=None):
     end: (str) end of the time-series.
   """
   if name == 'weather':
-    return _read_weather_df(filepath, start, end)
+    return _read_weather_df(filepath, start, end, data_interval)
   raise ValueError(f'Unsupported dataset {name}')
