@@ -123,7 +123,7 @@ def fit_and_forecast(model, train_df, test_df, endog_col, exog_cols,
 
   fitted_values = model_res.fittedvalues
   exog_test = test_df[exog_cols].to_numpy() if exog_cols else None
-  if exog_test:
+  if exog_test is not None:
     predictions = model_res.forecast(steps=forecast_steps, exog=exog_test)
   else:
     predictions = model_res.forecast(steps=forecast_steps)
