@@ -24,32 +24,39 @@ flags.DEFINE_integer('batch_size', 32, 'Batch size.')
 flags.DEFINE_integer('input_width', 10,
                      'The width of the input time-series data.')
 
+flags.DEFINE_bool('print_debug', False, 'True to print debug info.')
 
-def make_dataset(data_df, input_width, label_width):
+
+def df_to_array(data_df):
+  """Converts a DataFrame to an np.array."""
+  return np.array(data_df, dtype=np.float32)
+
+
+def make_dataset(data_df, input_width, label_width=None):
   """Returns a tf.dataset.Dataset for a DataFrame."""
-  sequence_length = input_width + label_width
-  data = np.array(data_df, dtype=np.float32)
+  sequence_length = input_width + (label_width or 0)
+  np_data = df_to_array(data_df)
   dataset = tf.keras.preprocessing.timeseries_dataset_from_array(
-    data=data, targets=None, sequence_length=sequence_length,
+    data=np_data, targets=None, sequence_length=sequence_length,
     sequence_stride=1, shuffle=True, batch_size=FLAGS.batch_size)
 
   @tf.autograph.experimental.do_not_convert
   def split(features):
     inputs = features[:, slice(0, input_width), :]
-    labels = features[:, slice(input_width, None), -1]
     inputs.set_shape([None, input_width, None])
-    labels.set_shape([None, label_width])
+    labels = None
+    if label_width:
+      labels = features[:, slice(input_width, None), -1]
+      labels.set_shape([None, label_width])
     return inputs, labels
 
   dataset = dataset.map(split)
   return dataset
 
 
-def fit_and_forecast(train_dataset, test_dataset, endog_col, exog_cols,
-                     forecast_steps):
-  """Fits a TF model and returns the fitted values and forecasts."""
-  model = tf_models.AutoRegRNN(FLAGS.cell_type, FLAGS.cell_units,
-                               forecast_steps)
+def train_model(model, train_dataset, test_dataset,
+                endog_col, exog_cols, forecast_steps):
+  """Fits a TF model and returns the history."""
   model.compile(loss=tf.losses.MeanSquaredError(),
                 optimizer=tf.optimizers.Adam(),
                 metrics=[tf.metrics.MeanAbsoluteError()])
@@ -82,11 +89,22 @@ def main(argv=()):
   input_width = FLAGS.input_width
   train_dataset = make_dataset(train_df, input_width, forecast_steps)
   test_dataset = make_dataset(test_df, input_width, forecast_steps)
-  history = fit_and_forecast(train_dataset, test_dataset, endog_col,
-                             exog_cols, forecast_steps)
 
-  # plot.plot_fit_pred(train_df, test_df, endog_col, fitted_values, predictions)
-  # plt.show()
+  model = tf_models.AutoRegRNN(FLAGS.cell_type, FLAGS.cell_units,
+                               forecast_steps)
+  history = train_model(model, train_dataset, test_dataset,
+                        endog_col, exog_cols, forecast_steps)
+  if FLAGS.print_debug:
+    print(history.history)
+
+  forecast_df = train_df.iloc[-input_width:]
+  # forecast_dataset = make_dataset(forecast_df, input_width)
+  forecast_tensor = tf.convert_to_tensor(df_to_array(forecast_df))
+  forecast_tensor = tf.expand_dims(forecast_tensor, axis=0)  # Add batch dim.
+  predictions = model(forecast_tensor, training=False).numpy()
+  print(f'Predictions: {predictions}')
+  plot.plot_fit_pred(train_df, test_df, endog_col, predictions=predictions)
+  plt.show()
 
 
 if __name__ == '__main__':
